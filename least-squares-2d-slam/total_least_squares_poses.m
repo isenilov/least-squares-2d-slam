@@ -1,10 +1,10 @@
-source "../tools/utilities/geometry_helpers_3d.m"
+source "../tools/utilities/geometry_helpers_2d.m"
 source "./total_least_squares_indices.m"
 
 # error and jacobian of a measured pose, all poses are in world frame
 # input:
-#   Xi: the observing robot pose (4x4 homogeneous matrix)
-#   Xj: the observed robot pose (4x4 homogeneous matrix)
+#   Xi: the observing robot pose (3x3 homogeneous matrix)
+#   Xj: the observed robot pose (3x3 homogeneous matrix)
 #   Z:   the relative transform measured between Xr1 and Xr2
 #   e: 12x1 is the difference between prediction, and measurement, vectorized
 #   Ji : 12x6 derivative w.r.t a the error and a perturbation of the
@@ -13,41 +13,45 @@ source "./total_least_squares_indices.m"
 #       second pose
 
 function [e,Ji,Jj]=poseErrorAndJacobian(Xi,Xj,Z)
-  global Rx0;
-  global Ry0;
-  global Rz0;
-  Ri=Xi(1:3,1:3);
-  Rj=Xj(1:3,1:3);
-  ti=Xi(1:3,4);
-  tj=Xj(1:3,4);
+  global R0; # global Rx0;
+  # global Ry0;
+  # global Rz0;
+  Ri=Xi(1:2,1:2);  # Ri=Xi(1:3,1:3);
+  Rj=Xj(1:2,1:2);  # Rj=Xj(1:3,1:3);
+  ti=Xi(1:2,3);  # ti=Xi(1:3,4);
+  tj=Xj(1:2,3);  # tj=Xj(1:3,4);
   tij=tj-ti;
   Ri_transpose=Ri';
-  Ji=zeros(12,6);
-  Jj=zeros(12,6);
   
-  dR_dax=Ri_transpose*Rx0*Rj;
-  dR_day=Ri_transpose*Ry0*Rj;
-  dR_daz=Ri_transpose*Rz0*Rj;
+  # TODO: figure out how jacobian matrix is built
   
-  Jj(1:9,4)=reshape(dR_dax, 9, 1);
-  Jj(1:9,5)=reshape(dR_day, 9, 1);
-  Jj(1:9,6)=reshape(dR_daz, 9, 1);
-  Jj(10:12,1:3)=Ri_transpose;
+  Ji=zeros(6,4);  # Ji=zeros(12,6);
+  Jj=zeros(6,4);  # Jj=zeros(12,6);
   
-  Jj(10:12,4:6)=-Ri_transpose*skew(tj);
+  dR=Ri_transpose*R0*Rj;  # dR_dax=Ri_transpose*Rx0*Rj;
+  # dR_day=Ri_transpose*Ry0*Rj;
+  # dR_daz=Ri_transpose*Rz0*Rj;
+  
+  Jj(1:4,4)=reshape(dR, 4, 1);  # Jj(1:9,4)=reshape(dR_dax, 9, 1);
+  # Jj(1:9,5)=reshape(dR_day, 9, 1);
+  # Jj(1:9,6)=reshape(dR_daz, 9, 1);
+  Jj(5:6,1:2)=Ri_transpose;  # Jj(10:12,1:3)=Ri_transpose;
+  
+  # TODO: skew simmetric for 2d case
+  Jj(5:6,3:4)=-Ri_transpose;  # Jj(10:12,4:6)=-Ri_transpose*skew(tj);
   Ji=-Jj;
 
-  Z_hat=eye(4);
-  Z_hat(1:3,1:3)=Ri_transpose*Rj;
-  Z_hat(1:3,4)=Ri_transpose*tij;
+  Z_hat=eye(3);  # Z_hat=eye(4);
+  Z_hat(1:2,1:2)=Ri_transpose*Rj;  # Z_hat(1:3,1:3)=Ri_transpose*Rj;
+  Z_hat(1:2,3)=Ri_transpose*tij;  # Z_hat(1:3,4)=Ri_transpose*tij;
   e=flattenIsometryByColumns(Z_hat-Z);
  endfunction;
 
 #linearizes the robot-robot measurements
 # inputs:
-#   XR: the initial robot poses (4x4xnum_poses: array of homogeneous matrices)
-#   XL: the initial landmark estimates (3xnum_landmarks matrix of landmarks)
-#   ZR: the robot_robot measuremenrs (4x4xnum_measurements: array of homogeneous matrices)
+#   XR: the initial robot poses (3x3xnum_poses: array of homogeneous matrices)
+#   XL: the initial landmark estimates (2xnum_landmarks matrix of landmarks)
+#   ZR: the robot_robot measuremenrs (3x3xnum_measurements: array of homogeneous matrices)
 #   associations: 2xnum_measurements. 
 #                 associations(:,k)=[i_idx, j_idx]' means the kth measurement
 #                 refers to an observation made from pose i_idx, that
@@ -70,8 +74,8 @@ function [H,b, chi_tot, num_inliers]=linearizePoses(XR, XL, Zr, associations,num
   chi_tot=0;
   num_inliers=0;
   for (measurement_num=1:size(Zr,3))
-    Omega=eye(12);
-    Omega(1:9,1:9)*=1e3; # we need to pimp the rotation  part a little
+    Omega=eye(6);  # Omega=eye(12);
+    Omega(1:4,1:4)*=1e3;  # Omega(1:9,1:9)*=1e3; # we need to pimp the rotation  part a little
     pose_i_index=associations(1,measurement_num);
     pose_j_index=associations(2,measurement_num);
     Z=Zr(:,:,measurement_num);

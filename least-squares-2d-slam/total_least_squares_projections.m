@@ -1,5 +1,5 @@
 # Assembly of the projection problem
-source "../tools/utilities/geometry_helpers_3d.m"
+source "../tools/utilities/geometry_helpers_2d.m"
 source "./total_least_squares_indices.m"
 
 
