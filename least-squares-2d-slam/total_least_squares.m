@@ -1,4 +1,4 @@
-source "../tools/utilities/geometry_helpers_3d.m"
+source "../tools/utilities/geometry_helpers_2d.m"
 source "./total_least_squares_indices.m"
 source "./total_least_squares_landmarks.m"
 source "./total_least_squares_poses.m"
@@ -7,8 +7,8 @@ source "./total_least_squares_projections.m"
 # implementation of the boxplus
 # applies a perturbation to a set of landmarks and robot poses
 # input:
-#   XR: the robot poses (4x4xnum_poses: array of homogeneous matrices)
-#   XL: the landmark pose (3xnum_landmarks matrix of landmarks)
+#   XR: the robot poses (3x3xnum_poses: array of homogeneous matrices)
+#   XL: the landmark pose (2xnum_landmarks matrix of landmarks)
 #   num_poses: number of poses in XR (added for consistency)
 #   num_landmarks: number of landmarks in XL (added for consistency)
 #   dx: the perturbation vector of appropriate dimensions
@@ -36,9 +36,9 @@ endfunction;
 # implementation of the optimization loop with robust kernel
 # applies a perturbation to a set of landmarks and robot poses
 # input:
-#   XR: the initial robot poses (4x4xnum_poses: array of homogeneous matrices)
-#   XL: the initial landmark estimates (3xnum_landmarks matrix of landmarks)
-#   Z:  the measurements (3xnum_measurements)
+#   XR: the initial robot poses (3x3xnum_poses: array of homogeneous matrices)
+#   XL: the initial landmark estimates (2xnum_landmarks matrix of landmarks)
+#   Z:  the measurements (2xnum_measurements)
 #   associations: 2xnum_measurements. 
 #                 associations(:,k)=[p_idx,l_idx]' means the kth measurement
 #                 refers to an observation made from pose p_idx, that
