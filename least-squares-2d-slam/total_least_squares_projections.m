@@ -4,16 +4,20 @@ source "./total_least_squares_indices.m"
 
 
 # camera matrix
+#{
 global K=[150,0,320;
 	  0, 150,240;
 	  0, 0, 1];
+#}    
+global K=[150, 0 ; 0, 150];
+
 
 # image_size
 global image_rows=480;
 global image_cols=540;
 
 # dimension of projection
-global projection_dim=2;
+global projection_dim=2;  # global projection_dim=2;
 
 
 # projects a point
@@ -23,12 +27,12 @@ function p_img=projectPoint(Xr,Xl)
   global K;
   iXr=inv(Xr);
   p_img=[-1;-1];
-  pw=iXr(1:3,1:3)*Xl+iXr(1:3,4);
-  if (pw(3)<0)
+  pw=iXr(1:2,1:2)*Xl+iXr(1:2,3);  # pw=iXr(1:3,1:3)*Xl+iXr(1:3,4);
+  if (pw(2)<0)  # if (pw(3)<0)
      return;
   endif;
   p_cam=K*pw;
-  iz=1./p_cam(3);
+  iz=1./p_cam(2);  # iz=1./p_cam(3);
   p_cam*=iz;
   if (p_cam(1)<0 || 
       p_cam(1)>image_cols ||
@@ -97,8 +101,8 @@ endfunction;
 
 
 #linearizes the robot-landmark measurements
-#   XR: the initial robot poses (4x4xnum_poses: array of homogeneous matrices)
-#   XL: the initial landmark estimates (3xnum_landmarks matrix of landmarks)
+#   XR: the initial robot poses (3x3xnum_poses: array of homogeneous matrices)
+#   XL: the initial landmark estimates (2xnum_landmarks matrix of landmarks)
 #   Z:  the measurements (2xnum_measurements)
 #   associations: 2xnum_measurements. 
 #                 associations(:,k)=[p_idx,l_idx]' means the kth measurement

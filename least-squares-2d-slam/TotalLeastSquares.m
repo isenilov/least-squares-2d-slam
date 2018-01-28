@@ -19,22 +19,22 @@ global image_rows;
 global image_cols;
 
 
-# poses in an array of 4x4 homogeneous transform matrices
-XR_true=zeros(4,4,num_poses);
+# poses in an array of 3x3 homogeneous transform matrices
+XR_true=zeros(3,3,num_poses);  # XR_true=zeros(4,4,num_poses);
 XL_true=P_world;
 
 # initialize 1st pose
-XR_true(:,:,1)=eye(4);
+XR_true(:,:,1)=eye(3);  # XR_true(:,:,1)=eye(4);
 
 # scaling coefficient for uniform random pose generation
 # adjusts the translation to cover world_size
 # adjusts the rotation to span the three angles;
-rand_scale=eye(6);
-rand_scale(1:3,1:3)*=(0.5*world_size);
-rand_scale(4:6,4:6)*=pi;
+rand_scale=eye(3);  # rand_scale=eye(6);
+rand_scale(1:2,1:2)*=(0.5*world_size);  # rand_scale(1:3,1:3)*=(0.5*world_size);
+rand_scale(3,3)*=pi;  # rand_scale(4:6,4:6)*=pi;
 
 for (pose_num=2:num_poses)
-    xr=rand(6,1)-0.5;
+    xr=rand(3,1)-0.5;  # xr=rand(6,1)-0.5;
     Xr=v2t(rand_scale*xr);
     XR_true(:,:,pose_num)=Xr;
 endfor;
@@ -53,7 +53,7 @@ for (pose_num=1:num_poses)
     for (landmark_num=1:num_landmarks)
 	Xl=XL_true(:,landmark_num);
 	landmark_associations(:,measurement_num)=[pose_num,landmark_num]';
-	Zl(:,measurement_num)=Xr(1:3,1:3)*Xl+Xr(1:3,4);
+	Zl(:,measurement_num)=Xr(1:2,1:2)*Xl+Xr(1:2,3);  # Zl(:,measurement_num)=Xr(1:3,1:3)*Xl+Xr(1:3,4);
 	measurement_num++;
     endfor;
 endfor
@@ -69,13 +69,13 @@ measurement_num=1;
 for (pose_num=1:num_poses)
     Xr=XR_true(:,:,pose_num);
     for (landmark_num=1:num_landmarks)
-	Xl=XL_true(:,landmark_num);
-	z_img=projectPoint(Xr,Xl);
-	if (z_img(1)>0)
-	  projection_associations(:,measurement_num)=[pose_num, landmark_num]';
-	  Zp(:,measurement_num)=z_img;
-	  measurement_num++;
-	endif;
+	    Xl=XL_true(:,landmark_num);
+	    z_img=projectPoint(Xr,Xl);
+	    if (z_img(1)>0)
+	      projection_associations(:,measurement_num)=[pose_num, landmark_num]';
+	      Zp(:,measurement_num)=z_img;
+	      measurement_num++;
+	    endif;
     endfor;
 endfor
 # crop the projection associations to something meaningful
@@ -88,7 +88,7 @@ Zp=Zp(:,1:num_projection_measurements);
 
 # generate an odometry trajectory for the robot
 num_pose_measurements=num_poses-1;
-Zr=zeros(4,4,num_pose_measurements);
+Zr=zeros(3,3,num_pose_measurements);  # Zr=zeros(4,4,num_pose_measurements);
 pose_associations=zeros(2,num_pose_measurements);
 
 measurement_num=1;
@@ -106,12 +106,12 @@ endfor
 
 # apply a perturbation to each ideal pose (construct the estimation problem)
 pert_deviation=1;
-pert_scale=eye(6)*pert_deviation;
+pert_scale=eye(3)*pert_deviation;  # pert_scale=eye(6)*pert_deviation;
 XR_guess=XR_true;
 XL_guess=XL_true;
 
 for (pose_num=2:num_poses)
-    xr=rand(6,1)-0.5;
+    xr=rand(3,1)-0.5;  # xr=rand(6,1)-0.5;
     dXr=v2t(pert_scale*xr);
     XR_guess(:,:,pose_num)=dXr*XR_guess(:,:,pose_num);
 endfor;
@@ -156,33 +156,41 @@ grid;
 
 subplot(2,2,1);
 title("Landmark Initial Guess");
-plot3(XL_true(1,:),XL_true(2,:),XL_true(3,:),'b*',"linewidth",2);
+# plot3(XL_true(1,:),XL_true(2,:),XL_true(3,:),'b*',"linewidth",2);
+plot3(XL_true(1,:),XL_true(2,:),'b*',"linewidth",2);
 hold on;
-plot3(XL_guess(1,:),XL_guess(2,:),XL_guess(3,:),'ro',"linewidth",2);
+# plot3(XL_guess(1,:),XL_guess(2,:),XL_guess(3,:),'ro',"linewidth",2);
+plot3(XL_guess(1,:),XL_guess(2,:),'ro',"linewidth",2);
 legend("Landmark True", "Guess");grid;
 
 
 subplot(2,2,2);
 title("Landmark After Optimization");
-plot3(XL_true(1,:),XL_true(2,:),XL_true(3,:),'b*',"linewidth",2);
+# plot3(XL_true(1,:),XL_true(2,:),XL_true(3,:),'b*',"linewidth",2);
+plot(XL_true(1,:),XL_true(2,:),'b*',"linewidth",2);
 hold on;
-plot3(XL(1,:),XL(2,:),XL(3,:),'ro',"linewidth",2);
+# plot3(XL(1,:),XL(2,:),XL(3,:),'ro',"linewidth",2);
+plot(XL(1,:),XL(2,:),'ro',"linewidth",2);
 legend("Landmark True", "Guess");grid;
 
 
 subplot(2,2,3);
 title("Poses Initial Guess");
-plot3(XR_true(1,:),XR_true(2,:),XR_true(3,:),'b*',"linewidth",2);
+# plot3(XR_true(1,:),XR_true(2,:),XR_true(3,:),'b*',"linewidth",2);
+plot(XR_true(1,:),XR_true(2,:),'b*',"linewidth",2);
 hold on;
-plot3(XR_guess(1,:),XR_guess(2,:),XR_guess(3,:),'ro',"linewidth",2);
+# plot3(XR_guess(1,:),XR_guess(2,:),XR_guess(3,:),'ro',"linewidth",2);
+plot(XR_guess(1,:),XR_guess(2,:),'ro',"linewidth",2);
 legend("Poses True", "Guess");grid;
 
 
 subplot(2,2,4);
 title("Poses After Optimization");
-plot3(XR_true(1,:),XR_true(2,:),XR_true(3,:),'b*',"linewidth",2);
+# plot3(XR_true(1,:),XR_true(2,:),XR_true(3,:),'b*',"linewidth",2);
+plot(XR_true(1,:),XR_true(2,:),'b*',"linewidth",2);
 hold on;
-plot3(XR(1,:),XR(2,:),XR(3,:),'ro',"linewidth",2);
+# plot3(XR(1,:),XR(2,:),XR(3,:),'ro',"linewidth",2);
+plot(XR(1,:),XR(2,:),'ro',"linewidth",2);
 legend("Poses True", "Guess"); grid;
 
 

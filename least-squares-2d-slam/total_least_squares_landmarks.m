@@ -25,17 +25,17 @@ function [e,Jr,Jl]=landmarkErrorAndJacobian(Xr,Xl,z)
   z_hat=iR*Xl+it; 
   e=z_hat-z;
   # TODO: figure out how jacobian matrix is built
-  Jr=zeros(2,4);  # Jr=zeros(3,6);
+  Jr=eye(3,3);  # Jr=zeros(3,6);
   Jr(1:2,1:2)=-iR;  # Jr(1:3,1:3)=-iR;
-  Jr(1:2,3:4)=iR  # *skew(Xl);  # Jr(1:3,4:6)=iR*skew(Xl);
+  Jr(1:2,2:3)=iR;  # *skew(Xl);  # Jr(1:3,4:6)=iR*skew(Xl);
   Jl=iR;
 endfunction;
 
 
 #linearizes the robot-landmark measurements
-#   XR: the initial robot poses (4x4xnum_poses: array of homogeneous matrices)
-#   XL: the initial landmark estimates (3xnum_landmarks matrix of landmarks)
-#   Z:  the measurements (3xnum_measurements)
+#   XR: the initial robot poses (3x3xnum_poses: array of homogeneous matrices)
+#   XL: the initial landmark estimates (2xnum_landmarks matrix of landmarks)
+#   Z:  the measurements (2xnum_measurements)
 #   associations: 2xnum_measurements. 
 #                 associations(:,k)=[p_idx,l_idx]' means the kth measurement
 #                 refers to an observation made from pose p_idx, that
@@ -74,13 +74,13 @@ function [H,b, chi_tot, num_inliers]=linearizeLandmarks(XR, XL, Zl, associations
     chi_tot+=chi;
 
     pose_matrix_index=poseMatrixIndex(pose_index, num_poses, num_landmarks);
-    landmark_matrix_index=landmarkMatrixIndex(landmark_index, num_poses, num_landmarks);
+    landmark_matrix_index=landmarkMatrixIndex(landmark_index, num_poses, num_landmarks)
 
     H(pose_matrix_index:pose_matrix_index+pose_dim-1,
       pose_matrix_index:pose_matrix_index+pose_dim-1)+=Jr'*Jr;
 
     H(pose_matrix_index:pose_matrix_index+pose_dim-1,
-      landmark_matrix_index:landmark_matrix_index+landmark_dim-1)+=Jr'*Jl;
+      landmark_matrix_index:landmark_matrix_index+landmark_dim-1)+=Jr'*Jl
 
     H(landmark_matrix_index:landmark_matrix_index+landmark_dim-1,
       landmark_matrix_index:landmark_matrix_index+landmark_dim-1)+=Jl'*Jl;
